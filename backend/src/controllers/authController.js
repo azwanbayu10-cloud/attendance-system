@@ -1,0 +1,5 @@
+import { prisma } from '../config/prisma.js';
+import { hashPassword, signToken, verifyPassword } from '../utils/security.js';
+export async function register(req, res) { const { email, password, firstName, lastName, phone, employeeNo } = req.body; const user = await prisma.user.create({ data: { email, passwordHash: await hashPassword(password), employee: { create: { firstName, lastName, phone, employeeNo } } }, include: { employee: true } }); res.status(201).json({ token: signToken(user), user: { id: user.id, email, role: user.role, employee: user.employee } }); }
+export async function login(req, res) { const user = await prisma.user.findUnique({ where: { email: req.body.email }, include: { employee: true } }); if (!user || !(await verifyPassword(req.body.password, user.passwordHash))) return res.status(401).json({ message: 'Invalid credentials' }); res.json({ token: signToken(user), user: { id: user.id, email: user.email, role: user.role, employee: user.employee } }); }
+export const me = (req, res) => res.json({ user: req.user });
