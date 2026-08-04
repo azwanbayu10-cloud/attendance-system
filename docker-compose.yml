@@ -1,0 +1,22 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: attendance_system
+      MYSQL_USER: attendance
+      MYSQL_PASSWORD: attendance
+      MYSQL_ROOT_PASSWORD: root
+    ports: ["3306:3306"]
+    volumes: [mysql-data:/var/lib/mysql]
+  backend:
+    build: ./backend
+    env_file: .env.example
+    depends_on: [mysql]
+    ports: ["4000:4000"]
+    volumes: [./backend/uploads:/app/uploads]
+  frontend:
+    build: ./frontend
+    depends_on: [backend]
+    ports: ["5173:80"]
+volumes:
+  mysql-data:

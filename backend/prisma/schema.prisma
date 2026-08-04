@@ -1,0 +1,61 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "mysql" url = env("DATABASE_URL") }
+
+enum Role { ADMIN EMPLOYEE }
+enum AttendanceStatus { PRESENT LATE ABSENT HALF_DAY ON_LEAVE }
+enum AttendanceAction { CHECK_IN CHECK_OUT }
+
+model User {
+  id Int @id @default(autoincrement())
+  email String @unique
+  passwordHash String
+  role Role @default(EMPLOYEE)
+  isActive Boolean @default(true)
+  employee Employee?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Employee {
+  id Int @id @default(autoincrement())
+  userId Int @unique
+  employeeNo String @unique
+  firstName String
+  lastName String
+  phone String?
+  address String?
+  avatarUrl String?
+  departmentId Int?
+  positionId Int?
+  scheduleId Int?
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  department Department? @relation(fields:[departmentId], references:[id])
+  position Position? @relation(fields:[positionId], references:[id])
+  schedule WorkSchedule? @relation(fields:[scheduleId], references:[id])
+  attendances Attendance[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Department { id Int @id @default(autoincrement()) name String @unique description String? employees Employee[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt }
+model Position { id Int @id @default(autoincrement()) title String @unique description String? employees Employee[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt }
+model WorkSchedule { id Int @id @default(autoincrement()) name String @unique startTime String endTime String graceMinutes Int @default(10) employees Employee[] createdAt DateTime @default(now()) updatedAt DateTime @updatedAt }
+model QrToken { id Int @id @default(autoincrement()) token String @unique expiresAt DateTime isActive Boolean @default(true) createdById Int? createdAt DateTime @default(now()) }
+model Attendance {
+  id Int @id @default(autoincrement())
+  employeeId Int
+  date DateTime
+  checkInAt DateTime?
+  checkOutAt DateTime?
+  checkInLat Decimal? @db.Decimal(10,7)
+  checkInLng Decimal? @db.Decimal(10,7)
+  checkOutLat Decimal? @db.Decimal(10,7)
+  checkOutLng Decimal? @db.Decimal(10,7)
+  status AttendanceStatus @default(PRESENT)
+  notes String?
+  employee Employee @relation(fields:[employeeId], references:[id], onDelete:Cascade)
+  logs AttendanceLog[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([employeeId,date])
+}
+model AttendanceLog { id Int @id @default(autoincrement()) attendanceId Int action AttendanceAction latitude Decimal @db.Decimal(10,7) longitude Decimal @db.Decimal(10,7) createdAt DateTime @default(now()) attendance Attendance @relation(fields:[attendanceId], references:[id], onDelete:Cascade) }
+model Setting { id Int @id @default(autoincrement()) key String @unique value String updatedAt DateTime @updatedAt }

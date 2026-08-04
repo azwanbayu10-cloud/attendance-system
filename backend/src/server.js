@@ -1,0 +1,12 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import { env } from './config/env.js';
+import router from './routes/index.js';
+const app = express(); const server = createServer(app); const io = new Server(server, { cors: { origin: env.clientUrl } });
+app.set('io', io); app.use(helmet()); app.use(cors({ origin: env.clientUrl })); app.use(express.json()); app.use(rateLimit({ windowMs: 60_000, max: 120 })); app.use('/uploads', express.static('uploads')); app.get('/health', (_req,res)=>res.json({ ok:true })); app.use('/api', router); app.use((err,_req,res,_next)=>res.status(500).json({ message: err.message || 'Server error' }));
+io.on('connection', (socket) => socket.emit('connected', { ok: true }));
+server.listen(env.port, () => console.log(`Attendance API running on ${env.port}`));
